@@ -40,12 +40,12 @@ export default function WalletCard() {
       <button onClick={openWalletBalanceModal} className="w-full text-left space-y-1 group">
         <div className="flex items-baseline gap-2">
           <span className="text-4xl font-bold tracking-tight tabular-nums group-hover:opacity-80 transition-opacity">
-            {usdc ? parseFloat(usdc.balance).toFixed(2) : '0.00'}
+            {usdc?.balance ? parseFloat(usdc.balance).toFixed(2) : '0.00'}
           </span>
           <span className="text-[color:var(--muted)] font-medium">USDC</span>
         </div>
         <div className="text-xs text-[color:var(--muted)]">
-          {xlm ? `${parseFloat(xlm.balance).toFixed(2)} XLM` : '—'} · tap for details
+          {xlm?.balance ? `${parseFloat(xlm.balance).toFixed(2)} XLM` : '—'} · tap for details
         </div>
       </button>
 
