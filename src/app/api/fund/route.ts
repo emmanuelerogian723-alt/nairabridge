@@ -74,6 +74,28 @@ export async function POST(req: NextRequest) {
     const server = new Horizon.Server(HORIZON_URL);
     const treasuryAccount = await server.loadAccount(treasuryKeypair.publicKey());
 
+    // 1b) Ensure the destination account exists on-chain (Pollar normally does this,
+    //     but we create it with XLM if needed so demos never 400).
+    try {
+      const destAccount = await server.loadAccount(walletAddress);
+    } catch {
+      const createTx = new TransactionBuilder(treasuryAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET,
+      })
+        .addOperation(
+          Operation.createAccount({
+            destination: walletAddress,
+            startingBalance: '3',
+          })
+        )
+        .setTimeout(60)
+        .build();
+      createTx.sign(treasuryKeypair);
+      await server.submitTransaction(createTx);
+    }
+
+
     const tx = new TransactionBuilder(treasuryAccount, {
       fee: BASE_FEE,
       networkPassphrase: Networks.TESTNET,
