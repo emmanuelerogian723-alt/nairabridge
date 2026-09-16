@@ -1,33 +1,73 @@
 'use client';
 
+import { useState } from 'react';
 import { usePollar } from '@pollar/react';
 
-export default function WalletCard() {
-  const { isAuthenticated, wallet, login, openTxHistoryModal } = usePollar();
+function short(addr?: string) {
+  if (!addr) return '';
+  return `${addr.slice(0, 8)}…${addr.slice(-6)}`;
+}
 
-  if (!isAuthenticated) {
-    return (
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6 text-center space-y-4">
-        <p className="text-neutral-300">Sign in to create your Stellar wallet — no seed phrase, no crypto knowledge needed.</p>
-        <button
-          onClick={() => login({ provider: 'google' })}
-          className="rounded-md bg-white text-black px-5 py-2 font-medium"
-        >
-          Continue with Google
-        </button>
-      </div>
-    );
+export default function WalletCard() {
+  const { wallet, walletBalance, refreshWalletBalance, openWalletBalanceModal } = usePollar();
+  const [copied, setCopied] = useState(false);
+
+  const balances =
+    walletBalance && walletBalance.step === 'loaded' ? walletBalance.data?.balances ?? [] : [];
+  const usdc = balances.find((b: any) => b.asset_code === 'USDC');
+  const xlm = balances.find((b: any) => b.asset_type === 'native');
+
+  async function copyAddress() {
+    if (!wallet?.address) return;
+    try {
+      await navigator.clipboard.writeText(wallet.address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {}
   }
 
   return (
-    <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/30 p-5 flex items-center justify-between">
-      <div>
-        <p className="text-sm text-neutral-400">Wallet ready</p>
-        <p className="font-mono text-sm">{wallet?.address}</p>
+    <div className="glass p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-[color:var(--muted)] uppercase tracking-wider">
+          Your wallet
+        </span>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+          Stellar
+        </span>
       </div>
-      <button onClick={openTxHistoryModal} className="text-sm text-emerald-400 underline">
-        History
+
+      <button onClick={openWalletBalanceModal} className="w-full text-left space-y-1 group">
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-bold tracking-tight tabular-nums group-hover:opacity-80 transition-opacity">
+            {usdc ? parseFloat(usdc.balance).toFixed(2) : '0.00'}
+          </span>
+          <span className="text-[color:var(--muted)] font-medium">USDC</span>
+        </div>
+        <div className="text-xs text-[color:var(--muted)]">
+          {xlm ? `${parseFloat(xlm.balance).toFixed(2)} XLM` : '—'} · tap for details
+        </div>
       </button>
+
+      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/25 px-3 py-2.5">
+        <span className="font-mono text-[12px] text-[color:var(--muted)]">
+          {short(wallet?.address)}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={copyAddress}
+            className="text-[11px] text-emerald-300 hover:text-emerald-200 px-2 py-1 rounded-md hover:bg-emerald-400/10 transition-colors"
+          >
+            {copied ? '✓ Copied' : 'Copy'}
+          </button>
+          <button
+            onClick={refreshWalletBalance}
+            className="text-[11px] text-[color:var(--muted)] hover:text-white px-2 py-1 rounded-md hover:bg-white/5 transition-colors"
+          >
+            ↻
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

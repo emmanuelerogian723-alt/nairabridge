@@ -12,39 +12,61 @@ import {
 // Demo FX rate — replace with a live quote source before mainnet.
 const NGN_PER_USD = 1650;
 
-// Circle's real Stellar testnet USDC issuer (confirmed via developers.circle.com).
-// Confirm/replace with the exact USDC issuer your Pollar app has configured under
-// Treasury -> Tokens & Trustlines before a live demo.
-const USDC_ISSUER = process.env.TESTNET_USDC_ISSUER || 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
+// Circle's real Stellar testnet USDC issuer.
+const USDC_ISSUER =
+  process.env.TESTNET_USDC_ISSUER || 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
 
 const HORIZON_URL = 'https://horizon-testnet.stellar.org';
+
+/**
+ * Activate the user's Pollar wallet via the Pollar Server API (deferred-funding
+ * business event). 409 "already funded" is a safe no-op.
+ */
+async function activatePollarWallet(publicKey: string): Promise<void> {
+  const pollarSecret = process.env.POLLAR_SECRET_KEY;
+  if (!pollarSecret) return;
+  try {
+    await fetch('https://server.api.pollar.xyz/v1/wallets/fund', {
+      method: 'POST',
+      headers: {
+        'x-pollar-api-key': pollarSecret,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ publicKey }),
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (err) {
+    // Activation is best-effort; the treasury payment below is the source of truth.
+    console.warn('Pollar wallet activation failed:', err);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { walletAddress, ngnAmount, reference } = await req.json();
 
-    if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('G')) {
+    if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('G') || walletAddress.length !== 56) {
       return NextResponse.json({ error: 'Missing or invalid walletAddress' }, { status: 400 });
     }
     if (!ngnAmount || ngnAmount <= 0) {
       return NextResponse.json({ error: 'Missing or invalid ngnAmount' }, { status: 400 });
     }
-    if (!reference) {
+    if (!reference || typeof reference !== 'string' || reference.length < 4) {
       return NextResponse.json({ error: 'Missing transaction reference' }, { status: 400 });
     }
 
     const treasurySecret = process.env.TREASURY_SECRET_KEY;
     if (!treasurySecret) {
-      // No treasury configured yet — return a simulated "pending manual review" response
-      // so the UI flow is fully demoable before the real testnet treasury is funded.
-      return NextResponse.json({
-        simulated: true,
-        usdcSent: (ngnAmount / NGN_PER_USD).toFixed(2),
-        txHash: 'SIMULATED-' + reference,
-        note: 'TREASURY_SECRET_KEY not set — this is a mocked confirmation. Set it to send real testnet USDC.',
-      });
+      return NextResponse.json(
+        { error: 'Treasury not configured — TREASURY_SECRET_KEY missing on the server.' },
+        { status: 503 }
+      );
     }
 
+    // 1) Activate the user's Pollar wallet on-chain (real, sponsored reserve).
+    await activatePollarWallet(walletAddress);
+
+    // 2) Send real testnet USDC from the NairaBridge treasury to the user's wallet.
     const usdcAmount = (ngnAmount / NGN_PER_USD).toFixed(7);
     const treasuryKeypair = Keypair.fromSecret(treasurySecret);
     const USDC = new Asset('USDC', USDC_ISSUER);

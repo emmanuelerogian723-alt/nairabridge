@@ -1,26 +1,139 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #060a13;
+  --bg-2: #0a1120;
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-2: rgba(255, 255, 255, 0.07);
+  --line: rgba(255, 255, 255, 0.09);
+  --text: #f1f5f9;
+  --muted: #8fa3b8;
+  --emerald: #34d399;
+  --emerald-2: #10b981;
+  --gold: #fbbf24;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ambient aurora glows */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  border-radius: 9999px;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+body::before {
+  width: 480px;
+  height: 480px;
+  top: -160px;
+  left: -120px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22), transparent 65%);
+  animation: drift1 16s ease-in-out infinite alternate;
+}
+body::after {
+  width: 420px;
+  height: 420px;
+  bottom: -140px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.13), transparent 65%);
+  animation: drift2 20s ease-in-out infinite alternate;
+}
+@keyframes drift1 { from { transform: translate(0, 0); } to { transform: translate(60px, 40px); } }
+@keyframes drift2 { from { transform: translate(0, 0); } to { transform: translate(-50px, -30px); } }
+
+/* glass card */
+.glass {
+  background: linear-gradient(160deg, var(--glass-2), var(--glass));
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* gradient text */
+.grad-text {
+  background: linear-gradient(100deg, #34d399 0%, #a7f3d0 45%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* primary CTA */
+.btn-primary {
+  background: linear-gradient(100deg, #059669, #34d399);
+  color: #03130c;
+  font-weight: 600;
+  border-radius: 0.85rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.35);
+}
+.btn-primary:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { filter: saturate(0.3) brightness(0.6); box-shadow: none; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 0.85rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.18); }
+
+/* corridor flow dashes */
+.flow-dash {
+  stroke-dasharray: 6 8;
+  animation: dashmove 1.2s linear infinite;
+}
+@keyframes dashmove { to { stroke-dashoffset: -14; } }
+
+/* fade-in-up */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fade-up-1 { animation-delay: 0.08s; }
+.fade-up-2 { animation-delay: 0.16s; }
+.fade-up-3 { animation-delay: 0.24s; }
+.fade-up-4 { animation-delay: 0.32s; }
+
+/* pulsing live dot */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+.live-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+
+/* subtle top nav */
+.nav-blur {
+  background: rgba(6, 10, 19, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+/* number inputs look clean */
+input, textarea {
+  outline: none;
+}
+input:focus, textarea:focus {
+  border-color: rgba(52, 211, 153, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
