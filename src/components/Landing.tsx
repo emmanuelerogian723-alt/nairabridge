@@ -132,6 +132,12 @@ export default function Landing() {
             >
               {busy ? (mode === 'create' ? 'Creating wallet…' : 'Signing in…') : mode === 'create' ? 'Create my wallet' : 'Sign in'}
             </button>
+            {busy && mode === 'create' && (
+              <p className="text-[11.5px] text-[color:var(--ink-2)] text-center leading-relaxed">
+                Creating a real Stellar account, USDC trustline and welcome bonus —
+                this can take up to ~30 seconds. Please keep this tab open.
+              </p>
+            )}
           </div>
 
           <p className="text-[12px] text-[color:var(--ink-2)] text-center">
