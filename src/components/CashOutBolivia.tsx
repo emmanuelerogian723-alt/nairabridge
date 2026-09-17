@@ -11,23 +11,23 @@ export default function CashOutBolivia() {
         <h3 className="font-semibold text-[15px] flex items-center gap-2">
           <span className="text-lg">🇧🇴</span> Cash Out in Bolivia
         </h3>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-300">
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border chip">
           USDC → BOB
         </span>
       </div>
 
-      <p className="text-[13px] text-[color:var(--muted)] leading-relaxed">
+      <p className="text-[13px] text-[color:var(--ink-2)] leading-relaxed">
         Live corridor via Stereum: sell USDC on Stellar and receive bolivianos by bank QR or
         straight to a Bolivian bank account — same day.
       </p>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-white/8 bg-black/25 p-3">
-          <div className="text-[11px] text-[color:var(--muted)]">Bank QR</div>
+        <div className="rounded-xl border border-[color:var(--hairline)] bg-black/[0.02] p-3">
+          <div className="text-[11px] text-[color:var(--ink-2)]">Bank QR</div>
           <div className="text-[13px] font-medium mt-0.5">Buy in Bolivia</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-black/25 p-3">
-          <div className="text-[11px] text-[color:var(--muted)]">ACH transfer</div>
+        <div className="rounded-xl border border-[color:var(--hairline)] bg-black/[0.02] p-3">
+          <div className="text-[11px] text-[color:var(--ink-2)]">ACH transfer</div>
           <div className="text-[13px] font-medium mt-0.5">Sell to bank</div>
         </div>
       </div>
