@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { usePollar } from '@pollar/react';
+import { useActiveWallet } from './useActiveWallet';
+import { refreshWallet } from './WalletCard';
 
 const NGN_PER_USD = 1650; // demo FX rate — swap for a live quote before mainnet
+const QUICK = [10000, 25000, 50000, 100000];
 
-export default function FundFromNigeria() {
-  const { wallet, refreshWalletBalance } = usePollar();
+export default function FundFromNigeria({ demo = false }: { demo?: boolean }) {
+  const { wallet } = useActiveWallet(demo);
   const [ngnAmount, setNgnAmount] = useState('50000');
   const [reference, setReference] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'confirmed' | 'error'>('idle');
@@ -15,7 +17,7 @@ export default function FundFromNigeria() {
   const usdcEstimate = (parseFloat(ngnAmount || '0') / NGN_PER_USD).toFixed(2);
 
   async function handleConfirm() {
-    if (!wallet?.address || !reference.trim()) return;
+    if (!wallet?.address || !reference.trim() || demo) return;
     setStatus('submitting');
     setMessage('');
     try {
@@ -32,7 +34,7 @@ export default function FundFromNigeria() {
       if (!res.ok) throw new Error(data.error || 'Funding failed');
       setStatus('confirmed');
       setMessage(`✓ ${data.usdcSent} USDC credited to your wallet`);
-      refreshWalletBalance().catch(() => {});
+      refreshWallet();
     } catch (e) {
       setStatus('error');
       setMessage(e instanceof Error ? e.message : 'Something went wrong');
@@ -45,12 +47,26 @@ export default function FundFromNigeria() {
         <h3 className="font-semibold text-[15px] flex items-center gap-2">
           <span className="text-lg">🇳🇬</span> Fund from Nigeria
         </h3>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border chip">
-          NGN → USDC
-        </span>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border chip">NGN → USDC</span>
       </div>
 
-      {/* amount + estimate */}
+      {/* quick amounts */}
+      <div className="grid grid-cols-4 gap-2">
+        {QUICK.map((q) => (
+          <button
+            key={q}
+            onClick={() => setNgnAmount(String(q))}
+            className={`text-[12px] font-semibold tabular-nums py-2 rounded-xl border transition-all ${
+              ngnAmount === String(q)
+                ? 'border-[#1d1d1f] bg-[#1d1d1f] text-white'
+                : 'border-[color:var(--hairline)] bg-white hover:border-black/25'
+            }`}
+          >
+            ₦{q / 1000}k
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-2">
         <label className="text-xs text-[color:var(--ink-2)]">Amount in Naira</label>
         <div className="relative">
@@ -69,7 +85,6 @@ export default function FundFromNigeria() {
         </div>
       </div>
 
-      {/* payment instructions */}
       <div className="rounded-xl border border-[color:var(--hairline)] bg-black/[0.02] p-3.5 space-y-1.5 text-[12px] leading-relaxed">
         <div className="flex justify-between">
           <span className="text-[color:var(--ink-2)]">Bank</span>
@@ -85,35 +100,36 @@ export default function FundFromNigeria() {
         </div>
       </div>
 
-      {/* reference */}
       <div className="space-y-2">
-        <label className="text-xs text-[color:var(--ink-2)]">
-          Transfer reference from your bank
-        </label>
+        <label className="text-xs text-[color:var(--ink-2)]">Transfer reference from your bank</label>
         <input
           value={reference}
           onChange={(e) => setReference(e.target.value)}
           className="w-full rounded-xl bg-white border border-[color:var(--hairline)] px-4 py-3 text-sm font-mono focus:border-emerald-400/50 transition-colors"
-          placeholder="e.g. 20260916N4K2"
+          placeholder="e.g. 20260917N4K2"
         />
       </div>
 
-      <button
-        onClick={handleConfirm}
-        disabled={status === 'submitting' || !reference.trim() || !wallet?.address}
-        className="btn-primary w-full py-3.5 text-[15px]"
-      >
-        {status === 'submitting' ? 'Confirming…' : `Confirm transfer · ${usdcEstimate} USDC`}
-      </button>
+      {demo ? (
+        <p className="text-[12px] text-[color:var(--ink-2)] bg-black/[0.02] border border-[color:var(--hairline)] rounded-xl px-3.5 py-2.5">
+          Preview mode — create a wallet to make real transfers.
+        </p>
+      ) : (
+        <button
+          onClick={handleConfirm}
+          disabled={status === 'submitting' || !reference.trim() || !wallet?.address}
+          className="btn-primary w-full py-3.5 text-[15px]"
+        >
+          {status === 'submitting' ? 'Confirming…' : `Confirm transfer · ${usdcEstimate} USDC`}
+        </button>
+      )}
 
       {message && (
-        <p
-          className={`text-[13px] rounded-xl px-3.5 py-2.5 border ${
-            status === 'error'
-              ? 'text-red-600 border-red-500/20 bg-red-50'
-              : 'text-[color:var(--emerald)] border-[color:var(--emerald)]/25 bg-emerald-50 text-[color:var(--emerald)]'
-          }`}
-        >
+        <p className={`text-[13px] rounded-xl px-3.5 py-2.5 border ${
+          status === 'error'
+            ? 'text-red-600 border-red-500/20 bg-red-50'
+            : 'text-[color:var(--emerald)] border-[color:var(--emerald)]/25 bg-emerald-50'
+        }`}>
           {message}
         </p>
       )}
