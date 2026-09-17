@@ -1,17 +1,10 @@
-'use client';
+import AppShell from '@/components/AppShell';
 
-import { useEffect, useState } from 'react';
-import { usePollar } from '@pollar/react';
-import Landing from '@/components/Landing';
-import Dashboard from '@/components/Dashboard';
-
-export default function Home() {
-  const { isAuthenticated } = usePollar();
-  const [demo, setDemo] = useState(false);
-
-  useEffect(() => {
-    setDemo(new URLSearchParams(window.location.search).get('demo') === '1');
-  }, []);
-
-  return isAuthenticated ? <Dashboard /> : demo ? <Dashboard demo /> : <Landing />;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string }>;
+}) {
+  const { demo } = await searchParams;
+  return <AppShell demo={demo === '1'} />;
 }
