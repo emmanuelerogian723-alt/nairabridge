@@ -90,7 +90,7 @@ export default function Landing() {
             Continue with Google
           </button>
           <div className="flex items-center justify-center">
-            <a href="?demo=1" className="text-[12px] text-[color:var(--ink-2)] hover:text-[color:var(--ink)] transition-colors">
+            <a href="/demo" className="text-[12px] text-[color:var(--ink-2)] hover:text-[color:var(--ink)] transition-colors">
               Take a look inside →
             </a>
           </div>
