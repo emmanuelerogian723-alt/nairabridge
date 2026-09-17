@@ -72,14 +72,16 @@ export async function POST(req: NextRequest) {
     const USDC = new Asset('USDC', USDC_ISSUER);
 
     const server = new Horizon.Server(HORIZON_URL);
-    const treasuryAccount = await server.loadAccount(treasuryKeypair.publicKey());
 
-    // 1b) Ensure the destination account exists on-chain (Pollar normally does this,
-    //     but we create it with XLM if needed so demos never 400).
-    try {
-      const destAccount = await server.loadAccount(walletAddress);
-    } catch {
-      const createTx = new TransactionBuilder(treasuryAccount, {
+    // 1b) If the destination account doesn't exist yet, create it with a small
+    //     XLM reserve so it can hold assets.
+    const destExists = await server
+      .loadAccount(walletAddress)
+      .then(() => true)
+      .catch(() => false);
+    if (!destExists) {
+      const treasuryAccount0 = await server.loadAccount(treasuryKeypair.publicKey());
+      const createTx = new TransactionBuilder(treasuryAccount0, {
         fee: BASE_FEE,
         networkPassphrase: Networks.TESTNET,
       })
@@ -95,8 +97,30 @@ export async function POST(req: NextRequest) {
       await server.submitTransaction(createTx);
     }
 
+    // 1c) A USDC payment needs a destination trustline. Pollar wallets get one
+    //     at creation; raw wallets don't. Fail with a clear, retryable message
+    //     instead of an opaque on-chain 400.
+    const destAccount = await server.loadAccount(walletAddress);
+    const hasTrustline = destAccount.balances.some(
+      (b: any) =>
+        b.asset_type === 'credit_alphanum4' &&
+        b.asset_code === 'USDC' &&
+        b.asset_issuer === USDC_ISSUER
+    );
+    if (!hasTrustline) {
+      return NextResponse.json(
+        {
+          error: 'wallet_not_ready',
+          message:
+            'Destination wallet has no USDC trustline yet. If it was just created, give Pollar a few seconds and retry.',
+        },
+        { status: 409 }
+      );
+    }
 
-    const tx = new TransactionBuilder(treasuryAccount, {
+    // 2) Send real testnet USDC from the treasury to the user's wallet.
+    const treasuryAccount = await server.loadAccount(treasuryKeypair.publicKey());
+    const txBuilder = new TransactionBuilder(treasuryAccount, {
       fee: BASE_FEE,
       networkPassphrase: Networks.TESTNET,
     })
@@ -107,9 +131,9 @@ export async function POST(req: NextRequest) {
           amount: usdcAmount,
         })
       )
-      .setTimeout(60)
-      .build();
+      .setTimeout(60);
 
+    const tx = txBuilder.build();
     tx.sign(treasuryKeypair);
     const result = await server.submitTransaction(tx);
 
